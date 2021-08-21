@@ -68,8 +68,7 @@ public interface RemoteCacheClient extends MissingDigestsFinder {
   @AutoValue
   abstract class CachedActionResult {
     public static CachedActionResult create(ActionResult actionResult, String cacheName) {
-      //return new AutoValue_CachedActionResult(actionResult, cacheName);
-      return null;
+      return new AutoValue_RemoteCacheClient_CachedActionResult(actionResult, cacheName);
     }
 
     @Nullable
