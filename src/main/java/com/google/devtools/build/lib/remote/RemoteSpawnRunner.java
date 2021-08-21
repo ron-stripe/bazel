@@ -55,6 +55,7 @@ import com.google.devtools.build.lib.remote.RemoteExecutionService.RemoteAction;
 import com.google.devtools.build.lib.remote.RemoteExecutionService.RemoteActionResult;
 import com.google.devtools.build.lib.remote.RemoteExecutionService.ServerLogs;
 import com.google.devtools.build.lib.remote.common.OperationObserver;
+import com.google.devtools.build.lib.remote.common.RemoteCacheClient.CachedActionResult;
 import com.google.devtools.build.lib.remote.options.RemoteOptions;
 import com.google.devtools.build.lib.remote.util.Utils;
 import com.google.devtools.build.lib.remote.util.Utils.InMemoryOutput;
@@ -191,9 +192,13 @@ public class RemoteSpawnRunner implements SpawnRunner {
       context.report(SPAWN_CHECKING_CACHE_EVENT);
 
       // Try to lookup the action in the action cache.
-      RemoteActionResult cachedResult;
+      CachedActionResult cachedActionResult;
       try (SilentCloseable c = prof.profile(ProfilerTask.REMOTE_CACHE_CHECK, "check cache hit")) {
-        cachedResult = acceptCachedResult ? remoteExecutionService.lookupCache(action) : null;
+        cachedActionResult = acceptCachedResult ? remoteExecutionService.lookupCache(action) : null;
+      }
+      RemoteActionResult cachedResult = null;
+      if (cachedActionResult != null) {
+        cachedResult = RemoteActionResult.createFromCache(cachedActionResult.actionResult());
       }
       if (cachedResult != null) {
         if (cachedResult.getExitCode() != 0) {
@@ -207,6 +212,7 @@ public class RemoteSpawnRunner implements SpawnRunner {
                 action,
                 cachedResult,
                 /* cacheHit= */ true,
+                cachedActionResult.cacheName(),
                 spawn,
                 totalTime,
                 () -> action.getNetworkTime().getDuration(),
@@ -273,6 +279,7 @@ public class RemoteSpawnRunner implements SpawnRunner {
                   action,
                   result,
                   result.cacheHit(),
+                  getName(),
                   spawn,
                   totalTime,
                   () -> action.getNetworkTime().getDuration(),
@@ -340,6 +347,7 @@ public class RemoteSpawnRunner implements SpawnRunner {
       RemoteAction action,
       RemoteActionResult result,
       boolean cacheHit,
+      String cacheName,
       Spawn spawn,
       Stopwatch totalTime,
       Supplier<Duration> networkTime,
@@ -361,7 +369,7 @@ public class RemoteSpawnRunner implements SpawnRunner {
     return createSpawnResult(
         result.getExitCode(),
         cacheHit,
-        getName(),
+        cacheName,
         inMemoryOutput,
         spawnMetrics
             .setFetchTime(fetchTime.elapsed().minus(networkTimeEnd.minus(networkTimeStart)))

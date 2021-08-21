@@ -83,6 +83,7 @@ import com.google.devtools.build.lib.remote.common.CacheNotFoundException;
 import com.google.devtools.build.lib.remote.common.OperationObserver;
 import com.google.devtools.build.lib.remote.common.RemoteActionExecutionContext;
 import com.google.devtools.build.lib.remote.common.RemoteCacheClient.ActionKey;
+import com.google.devtools.build.lib.remote.common.RemoteCacheClient.CachedActionResult;
 import com.google.devtools.build.lib.remote.common.RemoteExecutionClient;
 import com.google.devtools.build.lib.remote.common.RemotePathResolver;
 import com.google.devtools.build.lib.remote.common.RemotePathResolver.SiblingRepositoryLayoutResolver;
@@ -340,7 +341,8 @@ public class RemoteSpawnRunnerTest {
     remoteOptions.remoteLocalFallback = true;
     remoteOptions.remoteUploadLocalResults = true;
 
-    ActionResult failedAction = ActionResult.newBuilder().setExitCode(1).build();
+    CachedActionResult failedAction =
+        CachedActionResult.create(ActionResult.newBuilder().setExitCode(1).build(), "test");
     when(cache.downloadActionResult(
             any(RemoteActionExecutionContext.class),
             any(ActionKey.class),
@@ -380,7 +382,8 @@ public class RemoteSpawnRunnerTest {
     // Test that bazel treats failed cache action as a cache miss and attempts to execute action
     // remotely
 
-    ActionResult failedAction = ActionResult.newBuilder().setExitCode(1).build();
+    CachedActionResult failedAction =
+        CachedActionResult.create(ActionResult.newBuilder().setExitCode(1).build(), "test");
     when(cache.downloadActionResult(
             any(RemoteActionExecutionContext.class),
             any(ActionKey.class),
@@ -746,7 +749,8 @@ public class RemoteSpawnRunnerTest {
     // arrange
     RemoteSpawnRunner runner = newSpawnRunner();
 
-    ActionResult cachedResult = ActionResult.newBuilder().setExitCode(0).build();
+    CachedActionResult cachedResult =
+        CachedActionResult.create(ActionResult.newBuilder().setExitCode(0).build(), "test");
     when(cache.downloadActionResult(
             any(RemoteActionExecutionContext.class),
             any(ActionKey.class),
@@ -756,7 +760,7 @@ public class RemoteSpawnRunnerTest {
         new BulkTransferException(new CacheNotFoundException(Digest.getDefaultInstance()));
     doThrow(downloadFailure)
         .when(service)
-        .downloadOutputs(any(), eq(RemoteActionResult.createFromCache(cachedResult)));
+        .downloadOutputs(any(), eq(RemoteActionResult.createFromCache(cachedResult.actionResult())));
     ActionResult execResult = ActionResult.newBuilder().setExitCode(31).build();
     ExecuteResponse succeeded = ExecuteResponse.newBuilder().setResult(execResult).build();
     when(executor.executeRemotely(
@@ -1132,7 +1136,7 @@ public class RemoteSpawnRunnerTest {
     RemoteActionResult actionResult = RemoteActionResult.createFromCache(succeededAction);
 
     RemoteSpawnRunner runner = newSpawnRunner();
-    doReturn(actionResult).when(service).lookupCache(any());
+    doReturn(CachedActionResult.remote(succeededAction)).when(service).lookupCache(any());
 
     Spawn spawn = newSimpleSpawn();
     SpawnExecutionContext policy = getSpawnContext(spawn);
@@ -1187,7 +1191,7 @@ public class RemoteSpawnRunnerTest {
 
     RemoteSpawnRunner runner = newSpawnRunner();
 
-    doReturn(cachedActionResult).when(service).lookupCache(any());
+    doReturn(CachedActionResult.remote(succeededAction)).when(service).lookupCache(any());
     doThrow(downloadFailure).when(service).downloadOutputs(any(), eq(cachedActionResult));
 
     Spawn spawn = newSimpleSpawn();
@@ -1215,7 +1219,7 @@ public class RemoteSpawnRunnerTest {
     RemoteActionResult cachedActionResult = RemoteActionResult.createFromCache(succeededAction);
 
     RemoteSpawnRunner runner = newSpawnRunner(ImmutableSet.of(topLevelOutput));
-    doReturn(cachedActionResult).when(service).lookupCache(any());
+    doReturn(CachedActionResult.remote(succeededAction)).when(service).lookupCache(any());
 
     Spawn spawn = newSimpleSpawn(topLevelOutput);
     FakeSpawnExecutionContext policy = getSpawnContext(spawn);

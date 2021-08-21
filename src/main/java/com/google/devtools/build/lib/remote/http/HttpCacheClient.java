@@ -573,10 +573,10 @@ public final class HttpCacheClient implements RemoteCacheClient {
   }
 
   @Override
-  public ListenableFuture<ActionResult> downloadActionResult(
+  public ListenableFuture<CachedActionResult> downloadActionResult(
       RemoteActionExecutionContext context, ActionKey actionKey, boolean inlineOutErr) {
     return Utils.downloadAsActionResult(
-        actionKey, (digest, out) -> get(digest, out, /* casDownload= */ false));
+        actionKey, (digest, out) -> get(digest, out, /* casDownload= */ false), "remote");
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")

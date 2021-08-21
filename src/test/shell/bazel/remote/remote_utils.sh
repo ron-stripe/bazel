@@ -53,7 +53,6 @@ function stop_worker() {
     kill -9 "${pid}"
     rm -rf "${pid_file}"
   fi
-
   if [ -d "${work_path}" ]; then
     rm -rf "${work_path}"
   fi
@@ -62,4 +61,20 @@ function stop_worker() {
   fi
 }
 
-# TODO(ron): add get_stat method
+# Pass in the root of the disk cache and count number of files under /ac directory
+# output int to stdout
+function count_disk_ac_files() {
+  if [ -d "$1/ac" ]; then
+    expr $(find "$1/ac" -type f | wc -l)
+  else
+    echo 0
+  fi
+}
+
+function count_remote_ac_files() {
+  if [ -d "$cas_path/ac" ]; then
+    expr $(find "$cas_path/ac" -type f | wc -l)
+  else
+    echo 0
+  fi
+}

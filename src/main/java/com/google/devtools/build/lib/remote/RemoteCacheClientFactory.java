@@ -59,7 +59,6 @@ public final class RemoteCacheClientFactory {
       DigestUtil digestUtil)
       throws IOException {
     Preconditions.checkNotNull(workingDirectory, "workingDirectory");
-    // todo ron here or we can use a httpcache instead of grpc
     if (isHttpCache(options) && isDiskCache(options)) {
       return createDiskAndHttpCache(
           workingDirectory, options.diskCache, options, creds, digestUtil);
@@ -147,7 +146,6 @@ public final class RemoteCacheClientFactory {
     }
 
     RemoteCacheClient httpCache = createHttp(options, cred, digestUtil);
-    // TODO(ron): need this but with grpc client, not http
     return createDiskAndRemoteClient(
         workingDirectory,
         diskCachePath,

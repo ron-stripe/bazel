@@ -85,6 +85,7 @@ import com.google.devtools.build.lib.remote.common.OperationObserver;
 import com.google.devtools.build.lib.remote.common.OutputDigestMismatchException;
 import com.google.devtools.build.lib.remote.common.RemoteActionExecutionContext;
 import com.google.devtools.build.lib.remote.common.RemoteCacheClient.ActionKey;
+import com.google.devtools.build.lib.remote.common.RemoteCacheClient.CachedActionResult;
 import com.google.devtools.build.lib.remote.common.RemoteExecutionClient;
 import com.google.devtools.build.lib.remote.common.RemotePathResolver;
 import com.google.devtools.build.lib.remote.merkletree.MerkleTree;
@@ -481,22 +482,18 @@ public class RemoteExecutionService {
 
   /** Lookup the remote cache for the given {@link RemoteAction}. {@code null} if not found. */
   @Nullable
-  public RemoteActionResult lookupCache(RemoteAction action)
+  public CachedActionResult lookupCache(RemoteAction action)
       throws IOException, InterruptedException {
     checkState(shouldAcceptCachedResult(action.spawn), "spawn doesn't accept cached result");
-    java.io.File file = new java.io.File("/tmp/blog.log");
-    com.google.common.io.CharSink chs = com.google.common.io.Files.asCharSink(
-      file, com.google.common.base.Charsets.UTF_8, com.google.common.io.FileWriteMode.APPEND);
-    chs.write("IN lookupCache for " + remoteCache.cacheProtocol.getClass().toString()+ "\n");
-    ActionResult actionResult =
-        remoteCache.downloadActionResult(
-            action.remoteActionExecutionContext, action.actionKey, /* inlineOutErr= */ false);
 
-    if (actionResult == null) {
+    CachedActionResult cachedActionResult = remoteCache.downloadActionResult(
+        action.remoteActionExecutionContext, action.actionKey, /* inlineOutErr= */ false);
+
+    if (cachedActionResult == null) {
       return null;
     }
 
-    return RemoteActionResult.createFromCache(actionResult);
+    return cachedActionResult;
   }
 
   private static Path toTmpDownloadPath(Path actualPath) {
