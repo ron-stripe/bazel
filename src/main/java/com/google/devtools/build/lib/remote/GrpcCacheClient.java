@@ -236,8 +236,6 @@ public class GrpcCacheClient implements RemoteCacheClient, MissingDigestsFinder 
   }
 
   private ListenableFuture<CachedActionResult> handleStatus(ListenableFuture<ActionResult> download) {
-
-    // TODO(ron): Why is this more correct?
     ListenableFuture<CachedActionResult> cachedActionResultListenableFuture =
         FluentFuture.from(download)
         .transformAsync((ac) -> Futures.immediateFuture(CachedActionResult.remote(ac)),
@@ -252,23 +250,6 @@ public class GrpcCacheClient implements RemoteCacheClient, MissingDigestsFinder 
                 ? Futures.immediateFuture(null)
                 : Futures.immediateFailedFuture(new IOException(sre)),
         MoreExecutors.directExecutor());
-/*
-    ListenableFuture<ActionResult> actionResultFuture =  Futures.catchingAsync(
-        download,
-        StatusRuntimeException.class,
-        (sre) ->
-            sre.getStatus().getCode() == Code.NOT_FOUND
-                // Return null to indicate that it was a cache miss.
-                ? Futures.immediateFuture(null)
-                : Futures.immediateFailedFuture(new IOException(sre)),
-        MoreExecutors.directExecutor());
-
-    return Futures.transformAsync(
-        actionResultFuture,
-        (ar) -> Futures.immediateFuture(CachedActionResult.remote(ar)),
-        MoreExecutors.directExecutor());
-
- */
   }
 
   @Override

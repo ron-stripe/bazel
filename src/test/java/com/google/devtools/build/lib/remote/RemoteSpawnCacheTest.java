@@ -750,13 +750,13 @@ public class RemoteSpawnCacheTest {
 
     IOException downloadFailure = new IOException("downloadMinimal failed");
 
-    ActionResult actionResultSuccess  = ActionResult.newBuilder().setExitCode(0).build();
+    ActionResult success = ActionResult.newBuilder().setExitCode(0).build();
     when(remoteCache.downloadActionResult(
             any(RemoteActionExecutionContext.class), any(), /* inlineOutErr= */ eq(false)))
-        .thenReturn(CachedActionResult.create(actionResultSuccess, ""));
+        .thenReturn(CachedActionResult.create(success, ""));
     doThrow(downloadFailure)
         .when(cache.getRemoteExecutionService())
-        .downloadOutputs(any(), eq(RemoteActionResult.createFromCache(actionResultSuccess)));
+        .downloadOutputs(any(), eq(RemoteActionResult.createFromCache(success)));
 
     // act
     CacheHandle cacheHandle = cache.lookup(simpleSpawn, simplePolicy);
@@ -764,7 +764,7 @@ public class RemoteSpawnCacheTest {
     // assert
     assertThat(cacheHandle.hasResult()).isFalse();
     verify(cache.getRemoteExecutionService())
-        .downloadOutputs(any(), eq(RemoteActionResult.createFromCache(actionResultSuccess)));
+        .downloadOutputs(any(), eq(RemoteActionResult.createFromCache(success)));
     assertThat(eventHandler.getEvents().size()).isEqualTo(1);
     Event evt = eventHandler.getEvents().get(0);
     assertThat(evt.getKind()).isEqualTo(EventKind.WARNING);

@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.google.common.util.concurrent.Futures.addCallback;
 import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.Futures.transform;
@@ -489,11 +488,11 @@ public class RemoteExecutionService {
 
     CachedActionResult cachedActionResult = remoteCache.downloadActionResult(
         action.remoteActionExecutionContext, action.actionKey, /* inlineOutErr= */ false);
+
     if (cachedActionResult == null) {
       return null;
     }
 
-    //return RemoteActionResult.createFromCache(cachedActionResult.actionResult());
     return cachedActionResult;
   }
 
