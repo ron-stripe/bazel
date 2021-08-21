@@ -81,12 +81,12 @@ import com.google.devtools.build.lib.profiler.SilentCloseable;
 import com.google.devtools.build.lib.remote.RemoteExecutionService.ActionResultMetadata.DirectoryMetadata;
 import com.google.devtools.build.lib.remote.RemoteExecutionService.ActionResultMetadata.FileMetadata;
 import com.google.devtools.build.lib.remote.RemoteExecutionService.ActionResultMetadata.SymlinkMetadata;
-import com.google.devtools.build.lib.remote.common.FutureCachedActionResult;
 import com.google.devtools.build.lib.remote.common.NetworkTime;
 import com.google.devtools.build.lib.remote.common.OperationObserver;
 import com.google.devtools.build.lib.remote.common.OutputDigestMismatchException;
 import com.google.devtools.build.lib.remote.common.RemoteActionExecutionContext;
 import com.google.devtools.build.lib.remote.common.RemoteCacheClient.ActionKey;
+import com.google.devtools.build.lib.remote.common.RemoteCacheClient.CachedActionResult;
 import com.google.devtools.build.lib.remote.common.RemoteExecutionClient;
 import com.google.devtools.build.lib.remote.common.RemotePathResolver;
 import com.google.devtools.build.lib.remote.merkletree.MerkleTree;
@@ -484,23 +484,18 @@ public class RemoteExecutionService {
 
   /** Lookup the remote cache for the given {@link RemoteAction}. {@code null} if not found. */
   @Nullable
-  public Pair<RemoteActionResult, String> lookupCache(RemoteAction action)
+  public CachedActionResult lookupCache(RemoteAction action)
       throws IOException, InterruptedException {
     checkState(shouldAcceptCachedResult(action.spawn), "spawn doesn't accept cached result");
 
-    Pair<ActionResult, String> actionResultWithCacheName =
-        remoteCache.downloadActionResultWithCacheName(
-            action.remoteActionExecutionContext, action.actionKey, /* inlineOutErr= */ false);
-    if (actionResultWithCacheName == null) {
+    CachedActionResult cachedActionResult = remoteCache.downloadActionResult(
+        action.remoteActionExecutionContext, action.actionKey, /* inlineOutErr= */ false);
+    if (cachedActionResult == null) {
       return null;
     }
-    ActionResult actionResult = actionResultWithCacheName.first;
-    String cacheName = actionResultWithCacheName.second;
 
-    if (actionResult == null) {
-      return null;
-    }
-    return Pair.of(RemoteActionResult.createFromCache(actionResult), cacheName);
+    //return RemoteActionResult.createFromCache(cachedActionResult.actionResult());
+    return cachedActionResult;
   }
 
   private static Path toTmpDownloadPath(Path actualPath) {

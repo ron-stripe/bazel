@@ -55,6 +55,7 @@ import com.google.devtools.build.lib.remote.RemoteExecutionService.RemoteAction;
 import com.google.devtools.build.lib.remote.RemoteExecutionService.RemoteActionResult;
 import com.google.devtools.build.lib.remote.RemoteExecutionService.ServerLogs;
 import com.google.devtools.build.lib.remote.common.OperationObserver;
+import com.google.devtools.build.lib.remote.common.RemoteCacheClient.CachedActionResult;
 import com.google.devtools.build.lib.remote.options.RemoteOptions;
 import com.google.devtools.build.lib.remote.util.Utils;
 import com.google.devtools.build.lib.remote.util.Utils.InMemoryOutput;
@@ -192,14 +193,13 @@ public class RemoteSpawnRunner implements SpawnRunner {
       context.report(SPAWN_CHECKING_CACHE_EVENT);
 
       // Try to lookup the action in the action cache.
-      Pair<RemoteActionResult, String> cachedResultWithCacheName;
+      CachedActionResult cachedActionResult;
       try (SilentCloseable c = prof.profile(ProfilerTask.REMOTE_CACHE_CHECK, "check cache hit")) {
-        cachedResultWithCacheName = acceptCachedResult ? remoteExecutionService.lookupCache(action) : null;
+        cachedActionResult = acceptCachedResult ? remoteExecutionService.lookupCache(action) : null;
       }
-      if (cachedResultWithCacheName != null && cachedResultWithCacheName.first != null) {
-        RemoteActionResult cachedResult = cachedResultWithCacheName.first;
-        String cacheName = cachedResultWithCacheName.second;
-        if (cachedResult.getExitCode() != 0) {
+      RemoteActionResult result = cachedActionResult != null ? RemoteActionResult.createFromCache(cachedActionResult.actionResult()) : null;
+      if (result != null) {
+        if (result.getExitCode() != 0) {
           // Failed actions are treated as a cache miss mostly in order to avoid caching flaky
           // actions (tests).
           // Set acceptCachedResult to false in order to force the action re-execution
@@ -208,9 +208,9 @@ public class RemoteSpawnRunner implements SpawnRunner {
           try {
             return downloadAndFinalizeSpawnResult(
                 action,
-                cachedResult,
+                result,
                 /* cacheHit= */ true,
-                cacheName == null ? getName() : cacheName,
+                cachedActionResult.cacheName(),
                 spawn,
                 totalTime,
                 () -> action.getNetworkTime().getDuration(),

@@ -46,7 +46,6 @@ import com.google.devtools.build.lib.authandtls.CallCredentialsProvider;
 import com.google.devtools.build.lib.concurrent.ThreadSafety.ThreadSafe;
 import com.google.devtools.build.lib.remote.RemoteRetrier.ProgressiveBackoff;
 import com.google.devtools.build.lib.remote.common.CacheNotFoundException;
-import com.google.devtools.build.lib.remote.common.FutureCachedActionResult;
 import com.google.devtools.build.lib.remote.common.MissingDigestsFinder;
 import com.google.devtools.build.lib.remote.common.RemoteActionExecutionContext;
 import com.google.devtools.build.lib.remote.common.RemoteCacheClient;
@@ -235,8 +234,8 @@ public class GrpcCacheClient implements RemoteCacheClient, MissingDigestsFinder 
         callCredentialsProvider);
   }
 
-  private ListenableFuture<ActionResult> handleStatus(ListenableFuture<ActionResult> download) {
-    return Futures.catchingAsync(
+  private ListenableFuture<CachedActionResult> handleStatus(ListenableFuture<ActionResult> download) {
+    ListenableFuture<ActionResult> actionResultFuture = Futures.catchingAsync(
         download,
         StatusRuntimeException.class,
         (sre) ->
@@ -245,10 +244,16 @@ public class GrpcCacheClient implements RemoteCacheClient, MissingDigestsFinder 
                 ? Futures.immediateFuture(null)
                 : Futures.immediateFailedFuture(new IOException(sre)),
         MoreExecutors.directExecutor());
+
+    return Futures.transformAsync(
+        actionResultFuture,
+        (actionResult) -> Futures.immediateFuture(CachedActionResult.create(actionResult, "remote")),
+        MoreExecutors.directExecutor()
+    );
   }
 
   @Override
-  public FutureCachedActionResult downloadActionResult(
+  public ListenableFuture<CachedActionResult> downloadActionResult(
       RemoteActionExecutionContext context, ActionKey actionKey, boolean inlineOutErr) {
     GetActionResultRequest request =
         GetActionResultRequest.newBuilder()
@@ -257,11 +262,11 @@ public class GrpcCacheClient implements RemoteCacheClient, MissingDigestsFinder 
             .setInlineStderr(inlineOutErr)
             .setInlineStdout(inlineOutErr)
             .build();
-    return FutureCachedActionResult.fromRemote(Utils.refreshIfUnauthenticatedAsync(
+    return Utils.refreshIfUnauthenticatedAsync(
         () ->
             retrier.executeAsync(
                 () -> handleStatus(acFutureStub(context).getActionResult(request))),
-        callCredentialsProvider));
+        callCredentialsProvider);
   }
 
   @Override

@@ -42,6 +42,7 @@ import com.google.devtools.build.lib.profiler.SilentCloseable;
 import com.google.devtools.build.lib.remote.RemoteExecutionService.RemoteAction;
 import com.google.devtools.build.lib.remote.RemoteExecutionService.RemoteActionResult;
 import com.google.devtools.build.lib.remote.common.CacheNotFoundException;
+import com.google.devtools.build.lib.remote.common.RemoteCacheClient.CachedActionResult;
 import com.google.devtools.build.lib.remote.options.RemoteOptions;
 import com.google.devtools.build.lib.remote.util.Utils;
 import com.google.devtools.build.lib.remote.util.Utils.InMemoryOutput;
@@ -111,11 +112,11 @@ final class RemoteSpawnCache implements SpawnCache {
       // Metadata will be available in context.current() until we detach.
       // This is done via a thread-local variable.
       try {
-        Pair<RemoteActionResult, String> resultWithCacheName;
+        CachedActionResult cachedActionResult;
         try (SilentCloseable c = prof.profile(ProfilerTask.REMOTE_CACHE_CHECK, "check cache hit")) {
-          resultWithCacheName = remoteExecutionService.lookupCache(action);
+          cachedActionResult = remoteExecutionService.lookupCache(action);
         }
-        RemoteActionResult result = resultWithCacheName == null ? null:  resultWithCacheName.first;
+        RemoteActionResult result = RemoteActionResult.createFromCache(cachedActionResult.actionResult());
         // In case the remote cache returned a failed action (exit code != 0) we treat it as a
         // cache miss
         if (result != null && result. getExitCode() == 0) {
@@ -134,7 +135,7 @@ final class RemoteSpawnCache implements SpawnCache {
               createSpawnResult(
                   result.getExitCode(),
                   /*cacheHit=*/ true,
-                  resultWithCacheName.second,
+                  cachedActionResult.cacheName(),
                   inMemoryOutput,
                   spawnMetrics.build(),
                   spawn.getMnemonic());
