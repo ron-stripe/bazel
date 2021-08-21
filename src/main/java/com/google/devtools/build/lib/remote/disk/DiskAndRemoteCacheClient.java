@@ -200,7 +200,7 @@ public final class DiskAndRemoteCacheClient implements RemoteCacheClient {
           },
           MoreExecutors.directExecutor());
     } else {
-      return Futures.immediateFuture(CachedActionResult.create(null, ""));
+      return Futures.immediateFuture(CachedActionResult.remote(null));
     }
   }
 }

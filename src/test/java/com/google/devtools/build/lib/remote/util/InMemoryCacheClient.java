@@ -97,7 +97,7 @@ public final class InMemoryCacheClient implements RemoteCacheClient {
     if (actionResult == null) {
       return Futures.immediateFailedFuture(new CacheNotFoundException(actionKey.getDigest()));
     }
-    return Futures.immediateFuture(CachedActionResult.create(actionResult, "remote"));
+    return Futures.immediateFuture(CachedActionResult.remote(actionResult));
   }
 
   @Override

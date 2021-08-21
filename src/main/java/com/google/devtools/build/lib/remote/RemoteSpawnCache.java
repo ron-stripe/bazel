@@ -46,7 +46,6 @@ import com.google.devtools.build.lib.remote.common.RemoteCacheClient.CachedActio
 import com.google.devtools.build.lib.remote.options.RemoteOptions;
 import com.google.devtools.build.lib.remote.util.Utils;
 import com.google.devtools.build.lib.remote.util.Utils.InMemoryOutput;
-import com.google.devtools.build.lib.util.Pair;
 import com.google.devtools.build.lib.vfs.Path;
 import java.io.IOException;
 import java.util.HashSet;
@@ -116,10 +115,13 @@ final class RemoteSpawnCache implements SpawnCache {
         try (SilentCloseable c = prof.profile(ProfilerTask.REMOTE_CACHE_CHECK, "check cache hit")) {
           cachedActionResult = remoteExecutionService.lookupCache(action);
         }
-        RemoteActionResult result = RemoteActionResult.createFromCache(cachedActionResult.actionResult());
+        RemoteActionResult result = null;
+        if (cachedActionResult != null) {
+          result = RemoteActionResult.createFromCache(cachedActionResult.actionResult());
+        }
         // In case the remote cache returned a failed action (exit code != 0) we treat it as a
         // cache miss
-        if (result != null && result. getExitCode() == 0) {
+        if (result != null && result.getExitCode() == 0) {
           Stopwatch fetchTime = Stopwatch.createStarted();
           InMemoryOutput inMemoryOutput;
           try (SilentCloseable c = prof.profile(REMOTE_DOWNLOAD, "download outputs")) {

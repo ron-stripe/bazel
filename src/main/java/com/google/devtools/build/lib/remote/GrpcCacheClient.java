@@ -38,6 +38,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.flogger.GoogleLogger;
+import com.google.common.util.concurrent.FluentFuture;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -235,10 +236,11 @@ public class GrpcCacheClient implements RemoteCacheClient, MissingDigestsFinder 
   }
 
   private ListenableFuture<CachedActionResult> handleStatus(ListenableFuture<ActionResult> download) {
-    /*
+
+    // TODO(ron): Why is this more correct?
     ListenableFuture<CachedActionResult> cachedActionResultListenableFuture =
         FluentFuture.from(download)
-        .transformAsync((ac) -> Futures.immediateFuture(CachedActionResult.create(ac, "remote")),
+        .transformAsync((ac) -> Futures.immediateFuture(CachedActionResult.remote(ac)),
     MoreExecutors.directExecutor());
 
     return Futures.catchingAsync(
@@ -250,7 +252,7 @@ public class GrpcCacheClient implements RemoteCacheClient, MissingDigestsFinder 
                 ? Futures.immediateFuture(null)
                 : Futures.immediateFailedFuture(new IOException(sre)),
         MoreExecutors.directExecutor());
-     */
+/*
     ListenableFuture<ActionResult> actionResultFuture =  Futures.catchingAsync(
         download,
         StatusRuntimeException.class,
@@ -263,8 +265,10 @@ public class GrpcCacheClient implements RemoteCacheClient, MissingDigestsFinder 
 
     return Futures.transformAsync(
         actionResultFuture,
-        (ar) -> Futures.immediateFuture(CachedActionResult.create(ar, "remote")),
+        (ar) -> Futures.immediateFuture(CachedActionResult.remote(ar)),
         MoreExecutors.directExecutor());
+
+ */
   }
 
   @Override

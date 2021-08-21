@@ -74,7 +74,7 @@ public class RemoteRepositoryRemoteExecutorTest {
 
     // Arrange
     ActionResult cachedResult = ActionResult.newBuilder().setExitCode(0).build();
-    when(remoteCache.downloadActionResult(any(), any(), /* inlineOutErr= */ any() /*eq(true)*/))
+    when(remoteCache.downloadActionResult(any(), any(), /* inlineOutErr= */ eq(true)))
         .thenReturn(CachedActionResult.create(cachedResult, "test"));
 
     // Act

@@ -71,6 +71,14 @@ public interface RemoteCacheClient extends MissingDigestsFinder {
       return new AutoValue_RemoteCacheClient_CachedActionResult(actionResult, cacheName);
     }
 
+    public static CachedActionResult remote(ActionResult actionResult) {
+      return new AutoValue_RemoteCacheClient_CachedActionResult(actionResult, "remote");
+    }
+
+    public static CachedActionResult disk(ActionResult actionResult) {
+      return new AutoValue_RemoteCacheClient_CachedActionResult(actionResult, "disk");
+    }
+
     @Nullable
     public abstract ActionResult actionResult();
     public abstract String cacheName();

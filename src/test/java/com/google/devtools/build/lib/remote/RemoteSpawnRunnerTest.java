@@ -78,6 +78,7 @@ import com.google.devtools.build.lib.exec.SpawnRunner;
 import com.google.devtools.build.lib.exec.SpawnRunner.SpawnExecutionContext;
 import com.google.devtools.build.lib.exec.SpawnSchedulingEvent;
 import com.google.devtools.build.lib.exec.util.FakeOwner;
+import com.google.devtools.build.lib.remote.RemoteExecutionService.RemoteAction;
 import com.google.devtools.build.lib.remote.RemoteExecutionService.RemoteActionResult;
 import com.google.devtools.build.lib.remote.common.CacheNotFoundException;
 import com.google.devtools.build.lib.remote.common.OperationObserver;
@@ -93,7 +94,6 @@ import com.google.devtools.build.lib.remote.util.DigestUtil;
 import com.google.devtools.build.lib.remote.util.FakeSpawnExecutionContext;
 import com.google.devtools.build.lib.testutil.TestUtils;
 import com.google.devtools.build.lib.util.ExitCode;
-import com.google.devtools.build.lib.util.Pair;
 import com.google.devtools.build.lib.util.io.FileOutErr;
 import com.google.devtools.build.lib.vfs.DigestHashFunction;
 import com.google.devtools.build.lib.vfs.FileSystem;
@@ -1137,7 +1137,7 @@ public class RemoteSpawnRunnerTest {
     RemoteActionResult actionResult = RemoteActionResult.createFromCache(succeededAction);
 
     RemoteSpawnRunner runner = newSpawnRunner();
-    doReturn(Pair.of(actionResult, "remote")).when(service).lookupCache(any());
+    doReturn(CachedActionResult.remote(succeededAction)).when(service).lookupCache(any());
 
     Spawn spawn = newSimpleSpawn();
     SpawnExecutionContext policy = getSpawnContext(spawn);
@@ -1192,7 +1192,7 @@ public class RemoteSpawnRunnerTest {
 
     RemoteSpawnRunner runner = newSpawnRunner();
 
-    doReturn(Pair.of(cachedActionResult, "remote")).when(service).lookupCache(any());
+    doReturn(CachedActionResult.remote(succeededAction)).when(service).lookupCache(any());
     doThrow(downloadFailure).when(service).downloadOutputs(any(), eq(cachedActionResult));
 
     Spawn spawn = newSimpleSpawn();
@@ -1220,7 +1220,7 @@ public class RemoteSpawnRunnerTest {
     RemoteActionResult cachedActionResult = RemoteActionResult.createFromCache(succeededAction);
 
     RemoteSpawnRunner runner = newSpawnRunner(ImmutableSet.of(topLevelOutput));
-    doReturn(Pair.of(cachedActionResult, "remote")).when(service).lookupCache(any());
+    doReturn(CachedActionResult.remote(succeededAction)).when(service).lookupCache(any());
 
     Spawn spawn = newSimpleSpawn(topLevelOutput);
     FakeSpawnExecutionContext policy = getSpawnContext(spawn);

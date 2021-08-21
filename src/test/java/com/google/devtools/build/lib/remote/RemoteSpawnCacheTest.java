@@ -74,7 +74,6 @@ import com.google.devtools.build.lib.remote.util.DigestUtil;
 import com.google.devtools.build.lib.server.FailureDetails;
 import com.google.devtools.build.lib.server.FailureDetails.FailureDetail;
 import com.google.devtools.build.lib.server.FailureDetails.Spawn.Code;
-import com.google.devtools.build.lib.util.Pair;
 import com.google.devtools.build.lib.util.io.FileOutErr;
 import com.google.devtools.build.lib.vfs.DigestHashFunction;
 import com.google.devtools.build.lib.vfs.FileSystem;
@@ -260,14 +259,14 @@ public class RemoteSpawnCacheTest {
             any(ActionKey.class),
             /* inlineOutErr= */ eq(false)))
         .thenAnswer(
-            new Answer<Pair<ActionResult, String>>() {
+            new Answer<CachedActionResult>() {
               @Override
-              public Pair<ActionResult, String> answer(InvocationOnMock invocation) {
+              public CachedActionResult answer(InvocationOnMock invocation) {
                 RemoteActionExecutionContext context = invocation.getArgument(0);
                 RequestMetadata meta = context.getRequestMetadata();
                 assertThat(meta.getCorrelatedInvocationsId()).isEqualTo(BUILD_REQUEST_ID);
                 assertThat(meta.getToolInvocationId()).isEqualTo(COMMAND_ID);
-                return Pair.of(actionResult, "remote");
+                return CachedActionResult.remote(actionResult);
               }
             });
     doAnswer(
@@ -644,14 +643,14 @@ public class RemoteSpawnCacheTest {
             any(ActionKey.class),
             /* inlineOutErr= */ eq(false)))
         .thenAnswer(
-            new Answer<ActionResult>() {
+            new Answer<CachedActionResult>() {
               @Override
-              public ActionResult answer(InvocationOnMock invocation) {
+              public CachedActionResult answer(InvocationOnMock invocation) {
                 RemoteActionExecutionContext context = invocation.getArgument(0);
                 RequestMetadata meta = context.getRequestMetadata();
                 assertThat(meta.getCorrelatedInvocationsId()).isEqualTo(BUILD_REQUEST_ID);
                 assertThat(meta.getToolInvocationId()).isEqualTo(COMMAND_ID);
-                return actionResult;
+                return CachedActionResult.remote(actionResult);
               }
             });
     doThrow(new CacheNotFoundException(digest))
@@ -730,7 +729,7 @@ public class RemoteSpawnCacheTest {
     ActionResult success = ActionResult.newBuilder().setExitCode(0).build();
     when(remoteCache.downloadActionResult(
             any(RemoteActionExecutionContext.class), any(), /* inlineOutErr= */ eq(false)))
-        .thenReturn(CachedActionResult.create(success, "remote"));
+        .thenReturn(CachedActionResult.remote(success));
 
     // act
     CacheHandle cacheHandle = cache.lookup(simpleSpawn, simplePolicy);
